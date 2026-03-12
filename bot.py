@@ -1,12 +1,26 @@
 import asyncio
+import os
 import random
+
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
+from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-BOT_TOKEN = "8696675449:AAGNBSU_II9Y2joV8QE8xZKoyacDgFmfVMk"
 
+# Загружаем переменные окружения из .env
+load_dotenv()
+
+# Берём токен из переменной окружения BOT_TOKEN
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+# Проверка, чтобы бот не запускался без токена
+if not BOT_TOKEN:
+    raise ValueError("Переменная окружения BOT_TOKEN не найдена")
+
+
+# База карт
 cards = [
     {
         "name": "Шут",
@@ -46,6 +60,15 @@ cards = [
     }
 ]
 
+theme_names = {
+    "love": "Любовь",
+    "career": "Карьера",
+    "finance": "Финансы",
+    "advice": "Совет",
+}
+
+
+# Создаём объекты бота
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -73,43 +96,45 @@ async def start_handler(message: Message):
     await message.answer(
         "Здравствуйте ✨\n\n"
         "Добро пожаловать в бот с мини-раскладами Таро.\n\n"
-        "Вы можете получить короткий расклад по теме или перейти к обучению.",
+        "Выберите, что хотите сделать:",
         reply_markup=get_main_menu()
     )
 
 
 @dp.callback_query(F.data == "mini_reading")
 async def mini_reading_handler(callback: CallbackQuery):
+    # Сразу подтверждаем нажатие кнопки, чтобы Telegram не тормозил
+    await callback.answer()
+
     await callback.message.answer(
         "Выберите тему, на которую хотите получить мини-расклад:",
         reply_markup=get_theme_menu()
     )
-    await callback.answer()
 
 
 @dp.callback_query(F.data == "buy_course")
 async def buy_course_handler(callback: CallbackQuery):
-    await callback.message.answer(
-        "Для покупки обучения перейдите по ссылке:\n"
-        "https://example.com\n\n"
-        "Сюда потом можно поставить реальную ссылку на оплату, сайт, Taplink или форму заказа."
-    )
     await callback.answer()
+
+    await callback.message.answer(
+        "💎 Для покупки обучения перейдите по ссылке:\n"
+        "https://example.com\n\n"
+        "Потом сюда можно поставить реальную ссылку на оплату, сайт, Taplink или форму заказа."
+    )
 
 
 @dp.callback_query(F.data.startswith("theme_"))
 async def theme_handler(callback: CallbackQuery):
+    await callback.answer()
+
     theme = callback.data.replace("theme_", "")
+
+    if theme not in theme_names:
+        await callback.message.answer("Не удалось определить тему расклада.")
+        return
 
     selected_card = random.choice(cards)
     interpretation = selected_card["meanings"][theme]
-
-    theme_names = {
-        "love": "Любовь",
-        "career": "Карьера",
-        "finance": "Финансы",
-        "advice": "Совет"
-    }
 
     text = (
         f"✨ Ваш мини-расклад на тему: {theme_names[theme]}\n\n"
@@ -125,10 +150,10 @@ async def theme_handler(callback: CallbackQuery):
     builder.adjust(1)
 
     await callback.message.answer(text, reply_markup=builder.as_markup())
-    await callback.answer()
 
 
 async def main():
+    print("Бот запускается...")
     await dp.start_polling(bot)
 
 
