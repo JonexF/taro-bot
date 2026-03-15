@@ -19,9 +19,8 @@ if not BOT_TOKEN:
     raise ValueError("Переменная окружения BOT_TOKEN не найдена")
 
 # ==============================
-# БАЗА КАРТ
+# БАЗА КАРТ ПО ТЕМАМ
 # ==============================
-
 cards_by_theme = {
     "love": [
         {
@@ -58,7 +57,7 @@ cards_by_theme = {
         },
         {
             "name": "Рыцарь Жезлов",
-            "text": "В ближайшее время тебя ждёт страстные, быстрые действия; вероятна импульсивность, стремление к приключению и сильное влечение."
+            "text": "В ближайшее время тебя ждут страстные, быстрые действия; вероятна импульсивность, стремление к приключению и сильное влечение."
         },
         {
             "name": "Шут",
@@ -200,6 +199,8 @@ theme_names = {
     "advice": "Совет",
 }
 
+COURSE_LINK = "https://example.com"
+
 # Создаём объекты бота
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -220,6 +221,21 @@ def get_theme_menu():
     builder.button(text="💰 На финансы", callback_data="theme_finance")
     builder.button(text="🔮 Совет", callback_data="theme_advice")
     builder.adjust(2)
+    return builder.as_markup()
+
+
+def get_after_reading_menu():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💎 Купить обучение", callback_data="buy_course")
+    builder.button(text="🔁 Сделать ещё расклад", callback_data="mini_reading")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_promo_menu():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💎 Купить обучение за 990 ₽", callback_data="buy_course")
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -247,8 +263,8 @@ async def buy_course_handler(callback: CallbackQuery):
     await callback.answer()
     await callback.message.answer(
         "💎 Для покупки обучения перейдите по ссылке:\n"
-        "https://example.com\n\n"
-        "Потом сюда можно поставить реальную ссылку на оплату, сайт, Taplink или форму заказа."
+        f"{COURSE_LINK}\n\n"
+        "После оплаты можно выдать доступ в закрытый Telegram-канал или отправить дальнейшие инструкции."
     )
 
 
@@ -264,42 +280,39 @@ async def theme_handler(callback: CallbackQuery):
 
     selected_card = random.choice(cards_by_theme[theme])
 
-    text = (
+    reading_text = (
         f"✨ Ваш мини-расклад на тему: {theme_names[theme]}\n\n"
         f"🃏 Карта: {selected_card['name']}\n\n"
-        f"📖 Интерпретация:\n{selected_card['text']}\n\n"
-        f"💎 Если хотите глубже изучить Таро и научиться делать расклады самостоятельно, "
-        f"нажмите кнопку ниже:"
+        f"📖 Интерпретация:\n{selected_card['text']}"
     )
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text="💎 Купить обучение", callback_data="buy_course")
-    builder.button(text="🔁 Сделать ещё расклад", callback_data="mini_reading")
-    builder.adjust(1)
+    await callback.message.answer(
+        reading_text,
+        reply_markup=get_after_reading_menu()
+    )
 
-    await callback.message.answer(text, reply_markup=builder.as_markup())
-promo_text = (
-    "Твой расклад готов ✅\n\n"
-    "А что если у тебя ВСЕГДА под рукой будет инструмент, который сможет дать все необходимые ответы "
-    "и поможет сэкономить на платных раскладах?\n\n"
-    "За 990 ₽ ты получишь доступ к моему телеграм-каналу с обучением по Таро, "
-    "где освоишь не только этот мощный инструмент, но и при желании превратишь его "
-    "в дополнительный ДОХОД 💰\n\n"
-    "Что внутри канала:\n\n"
-    "• Полное собрание значений карт — простые и понятные объяснения даже для новичков\n"
-    "• Чёткие инструкции по раскладам и практике, чтобы сразу применять знания\n"
-    "• Система обучения без зубрёжки — работа через понимание\n"
-    "• Поддержка в чате и ответы на вопросы\n"
-    "• Доступ навсегда\n\n"
-    "Ну что ? Готова стать будущей ведьмой? ✨\n\n"
-    "Тогда жми кнопку ниже 👇🏻"
-)
+    promo_text = (
+        "Твой расклад готов ✅\n\n"
+        "А что если у тебя ВСЕГДА под рукой будет инструмент, который сможет дать все необходимые ответы "
+        "и поможет сэкономить на платных раскладах?\n\n"
+        "За 990 ₽ ты получишь доступ к моему телеграм-каналу с обучением по Таро, "
+        "где освоишь не только этот мощный инструмент, но и при желании превратишь его "
+        "в дополнительный ДОХОД 💰\n\n"
+        "Что внутри канала:\n\n"
+        "• Полное собрание значений карт — простые и понятные объяснения даже для новичков\n"
+        "• Чёткие инструкции по раскладам и практике, чтобы сразу применять знания\n"
+        "• Система обучения без зубрёжки — работа через понимание\n"
+        "• Поддержка в чате и ответы на вопросы\n"
+        "• Доступ навсегда\n\n"
+        "Ну что? Готова стать будущей ведьмой? ✨\n\n"
+        "Тогда жми кнопку ниже 👇🏻"
+    )
 
-builder = InlineKeyboardBuilder()
-builder.button(text="💎 Купить обучение за 990 ₽", callback_data="buy_course")
-builder.adjust(1)
+    await callback.message.answer(
+        promo_text,
+        reply_markup=get_promo_menu()
+    )
 
-await callback.message.answer(promo_text, reply_markup=builder.as_markup())
 
 async def main():
     print("Бот запускается...")
