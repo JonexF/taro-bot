@@ -18,8 +18,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("Переменная окружения BOT_TOKEN не найдена")
 
-# Ссылка на оплату
+# Ссылка на оплату и ссылка на закрытый канал
 COURSE_LINK = "https://yookassa.ru/my/i/abexX5Cytb8c/l"
+CHANNEL_LINK = "https://t.me/+T1jWi1N41_UyYTIy"
 
 # ==============================
 # БАЗА КАРТ ПО ТЕМАМ
@@ -345,6 +346,7 @@ async def theme_handler(callback: CallbackQuery):
         "• Система обучения без зубрёжки — работа через понимание\n"
         "• Поддержка в чате и ответы на вопросы\n"
         "• Доступ навсегда\n\n"
+        "После оплаты ты получишь доступ в закрытый Telegram-канал.\n\n"
         "Ну что? Готова стать будущей ведьмой? ✨\n\n"
         "Тогда жми кнопку ниже 👇🏻"
     )
