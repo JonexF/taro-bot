@@ -360,7 +360,11 @@ async def theme_handler(callback: CallbackQuery):
 async def main():
     print("Бот запускается...")
     await dp.start_polling(bot)
-
+    
+@dp.message()
+async def debug_message(message: Message):
+    print("CHAT ID:", message.chat.id)
+    print("CHAT TYPE:", message.chat.type)
 
 if __name__ == "__main__":
     asyncio.run(main())
