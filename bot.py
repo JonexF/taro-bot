@@ -21,6 +21,7 @@ if not BOT_TOKEN:
 # Ссылка на оплату и ссылка на закрытый канал
 COURSE_LINK = "https://yookassa.ru/my/i/abexX5Cytb8c/l"
 CHANNEL_LINK = "https://t.me/+T1jWi1N41_UyYTIy"
+CHANNEL_ID = -1003693758070
 
 # ==============================
 # БАЗА КАРТ ПО ТЕМАМ
@@ -350,6 +351,8 @@ async def theme_handler(callback: CallbackQuery):
         "Ну что? Готова стать будущей ведьмой? ✨\n\n"
         "Тогда жми кнопку ниже 👇🏻"
     )
+    
+await asyncio.sleep(7)
 
     await callback.message.answer(
         promo_text,
@@ -360,7 +363,7 @@ async def theme_handler(callback: CallbackQuery):
 async def main():
     print("Бот запускается...")
     await dp.start_polling(bot)
-    
+
 @dp.message()
 async def debug_message(message: Message):
     print("CHAT ID:", message.chat.id)
