@@ -252,7 +252,7 @@ dp = Dispatcher()
 def get_main_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="✨ Мини-расклад", callback_data="mini_reading")
-    builder.button(text="💎 Купить обучение", url=COURSE_LINK)
+    builder.button(text="💎 Купить обучение", callback_data="buy_course")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -269,7 +269,7 @@ def get_theme_menu():
 
 def get_after_reading_menu():
     builder = InlineKeyboardBuilder()
-    builder.button(text="💎 Купить обучение", url=COURSE_LINK)
+    builder.button(text="💎 Купить обучение", callback_data="buy_course")
     builder.button(text="🔁 Сделать ещё расклад", callback_data="mini_reading")
     builder.adjust(1)
     return builder.as_markup()
@@ -277,7 +277,13 @@ def get_after_reading_menu():
 
 def get_promo_menu():
     builder = InlineKeyboardBuilder()
-    builder.button(text="💎 Купить обучение за 990 ₽", url=COURSE_LINK)
+    builder.button(text="💎 Купить обучение за 990 ₽", callback_data="buy_course")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_paid_menu():
+    builder = InlineKeyboardBuilder()
     builder.button(text="✅ Я оплатил", callback_data="paid")
     builder.adjust(1)
     return builder.as_markup()
@@ -361,9 +367,25 @@ async def theme_handler(callback: CallbackQuery):
     )
 
 
+@dp.callback_query(F.data == "buy_course")
+async def buy_course_handler(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.answer(
+        "Для получения доступа к обучению перейдите по ссылке для оплаты:\n\n"
+        f"{COURSE_LINK}"
+    )
+
+    await callback.message.answer(
+        "После оплаты нажмите кнопку ниже 👇",
+        reply_markup=get_paid_menu()
+    )
+
+
 @dp.callback_query(F.data == "paid")
 async def paid_handler(callback: CallbackQuery):
     await callback.answer()
+
     await callback.message.answer(
         "Спасибо 💖\n\n"
         "Если оплата прошла успешно, переходи в закрытый канал по ссылке:\n"
