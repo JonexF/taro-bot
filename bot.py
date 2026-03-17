@@ -320,22 +320,7 @@ async def theme_handler(callback: CallbackQuery):
         f"📖 Интерпретация:\n{selected_card['text']}"
     )
 
-    image_path = selected_card.get("image")
-
-    if image_path and os.path.exists(image_path):
-        photo = FSInputFile(image_path)
-        await callback.message.answer_photo(
-            photo=photo,
-            caption=reading_text,
-            reply_markup=get_after_reading_menu()
-        )
-    else:
-        await callback.message.answer(
-            reading_text,
-            reply_markup=get_after_reading_menu()
-        )
-
-        promo_text = (
+    promo_text = (
         "Твой расклад готов ✅\n\n"
         "А что если у тебя ВСЕГДА под рукой будет инструмент, который сможет дать все необходимые ответы "
         "и поможет сэкономить на платных раскладах?\n\n"
@@ -353,6 +338,21 @@ async def theme_handler(callback: CallbackQuery):
         "Тогда жми кнопку ниже 👇🏻"
     )
 
+    image_path = selected_card.get("image")
+
+    if image_path and os.path.exists(image_path):
+        photo = FSInputFile(image_path)
+        await callback.message.answer_photo(
+            photo=photo,
+            caption=reading_text,
+            reply_markup=get_after_reading_menu()
+        )
+    else:
+        await callback.message.answer(
+            reading_text,
+            reply_markup=get_after_reading_menu()
+        )
+
     await asyncio.sleep(7)
 
     await callback.message.answer(
@@ -360,9 +360,14 @@ async def theme_handler(callback: CallbackQuery):
         reply_markup=get_promo_menu()
     )
 
+
+@dp.callback_query(F.data == "paid")
+async def paid_handler(callback: CallbackQuery):
+    await callback.answer()
     await callback.message.answer(
-        promo_text,
-        reply_markup=get_promo_menu()
+        "Спасибо 💖\n\n"
+        "Если оплата прошла успешно, переходи в закрытый канал по ссылке:\n"
+        f"{CHANNEL_LINK}"
     )
 
 
