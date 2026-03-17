@@ -278,6 +278,7 @@ def get_after_reading_menu():
 def get_promo_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="💎 Купить обучение за 990 ₽", url=COURSE_LINK)
+    builder.button(text="✅ Я оплатил", callback_data="paid")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -334,7 +335,7 @@ async def theme_handler(callback: CallbackQuery):
             reply_markup=get_after_reading_menu()
         )
 
-    promo_text = (
+        promo_text = (
         "Твой расклад готов ✅\n\n"
         "А что если у тебя ВСЕГДА под рукой будет инструмент, который сможет дать все необходимые ответы "
         "и поможет сэкономить на платных раскладах?\n\n"
@@ -351,8 +352,13 @@ async def theme_handler(callback: CallbackQuery):
         "Ну что? Готова стать будущей ведьмой? ✨\n\n"
         "Тогда жми кнопку ниже 👇🏻"
     )
-    
-await asyncio.sleep(7)
+
+    await asyncio.sleep(7)
+
+    await callback.message.answer(
+        promo_text,
+        reply_markup=get_promo_menu()
+    )
 
     await callback.message.answer(
         promo_text,
@@ -364,10 +370,6 @@ async def main():
     print("Бот запускается...")
     await dp.start_polling(bot)
 
-@dp.message()
-async def debug_message(message: Message):
-    print("CHAT ID:", message.chat.id)
-    print("CHAT TYPE:", message.chat.type)
 
 if __name__ == "__main__":
     asyncio.run(main())
