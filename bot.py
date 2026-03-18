@@ -29,7 +29,7 @@ ADMIN_ID = int(ADMIN_ID)
 # ==============================
 COURSE_LINK = "https://yookassa.ru/my/i/abexX5Cytb8c/l"
 CHANNEL_LINK = "https://t.me/+T1jWi1N41_UyYTIy"
-CHANNEL_ID = -1003693758070  # пока не используется
+CHANNEL_ID = -1003693758070  # пока не используется, можно оставить
 
 # ==============================
 # БАЗА КАРТ ПО ТЕМАМ
@@ -264,7 +264,6 @@ dp = Dispatcher()
 def get_main_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="✨ Мини-расклад", callback_data="mini_reading")
-    builder.button(text="💎 Купить обучение", callback_data="buy_course")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -281,8 +280,7 @@ def get_theme_menu():
 
 def get_after_reading_menu():
     builder = InlineKeyboardBuilder()
-    builder.button(text="💎 Купить обучение", callback_data="buy_course")
-    builder.button(text="🔁 Сделать ещё расклад", callback_data="mini_reading")
+    builder.button(text="🔁 Сделать расклад ещё", callback_data="mini_reading")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -290,6 +288,7 @@ def get_after_reading_menu():
 def get_promo_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="💎 Купить обучение за 990 ₽", callback_data="buy_course")
+    builder.button(text="🔁 Сделать расклад ещё", callback_data="mini_reading")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -303,17 +302,10 @@ def get_buy_menu():
 
 def get_admin_check_menu(user_id: int):
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text="✅ Подтвердить оплату",
-        callback_data=f"approve_{user_id}"
-    )
-    builder.button(
-        text="❌ Отклонить",
-        callback_data=f"reject_{user_id}"
-    )
+    builder.button(text="✅ Подтвердить оплату", callback_data=f"approve_{user_id}")
+    builder.button(text="❌ Отклонить", callback_data=f"reject_{user_id}")
     builder.adjust(1)
     return builder.as_markup()
-
 
 # ==============================
 # ОБРАБОТЧИКИ
@@ -369,8 +361,7 @@ async def theme_handler(callback: CallbackQuery):
         "• Поддержка в чате и ответы на вопросы\n"
         "• Доступ навсегда\n\n"
         "После оплаты пришли сюда скриншот чека, и я отправлю доступ в закрытый Telegram-канал.\n\n"
-        "Ну что? Готова стать будущей ведьмой? ✨\n\n"
-        "Тогда жми кнопку ниже 👇🏻"
+        "Ну что? Готова стать будущей ведьмой? ✨"
     )
 
     image_path = selected_card.get("image")
@@ -439,11 +430,11 @@ async def payment_screenshot_handler(message: Message):
 
 @dp.callback_query(F.data.startswith("approve_"))
 async def approve_payment_handler(callback: CallbackQuery):
-    await callback.answer("Оплата подтверждена")
-
     if callback.from_user.id != ADMIN_ID:
-        await callback.message.answer("У вас нет прав для этого действия.")
+        await callback.answer("Нет доступа", show_alert=True)
         return
+
+    await callback.answer("Оплата подтверждена")
 
     user_id = int(callback.data.replace("approve_", ""))
 
@@ -459,10 +450,7 @@ async def approve_payment_handler(callback: CallbackQuery):
         )
 
         await callback.message.edit_caption(
-            caption=(
-                f"{callback.message.caption}\n\n"
-                "✅ Оплата подтверждена"
-            ),
+            caption=f"{callback.message.caption}\n\n✅ Оплата подтверждена",
             reply_markup=None
         )
 
@@ -474,11 +462,11 @@ async def approve_payment_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_payment_handler(callback: CallbackQuery):
-    await callback.answer("Оплата отклонена")
-
     if callback.from_user.id != ADMIN_ID:
-        await callback.message.answer("У вас нет прав для этого действия.")
+        await callback.answer("Нет доступа", show_alert=True)
         return
+
+    await callback.answer("Оплата отклонена")
 
     user_id = int(callback.data.replace("reject_", ""))
 
@@ -493,10 +481,7 @@ async def reject_payment_handler(callback: CallbackQuery):
         )
 
         await callback.message.edit_caption(
-            caption=(
-                f"{callback.message.caption}\n\n"
-                "❌ Оплата отклонена"
-            ),
+            caption=f"{callback.message.caption}\n\n❌ Оплата отклонена",
             reply_markup=None
         )
 
@@ -509,7 +494,7 @@ async def reject_payment_handler(callback: CallbackQuery):
 @dp.message()
 async def other_messages_handler(message: Message):
     await message.answer(
-        "Пожалуйста, используйте кнопки меню ниже 👇",
+        "Пожалуйста, используйте кнопки ниже 👇",
         reply_markup=get_main_menu()
     )
 
