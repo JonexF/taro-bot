@@ -8,20 +8,28 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-# Загружаем переменные окружения из .env
+# ==============================
+# ЗАГРУЗКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
+# ==============================
 load_dotenv()
 
-# Берём токен из .env
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")
 
-# Проверка, чтобы бот не запускался без токена
 if not BOT_TOKEN:
     raise ValueError("Переменная окружения BOT_TOKEN не найдена")
 
-# Ссылка на оплату и ссылка на закрытый канал
+if not ADMIN_ID:
+    raise ValueError("Переменная окружения ADMIN_ID не найдена")
+
+ADMIN_ID = int(ADMIN_ID)
+
+# ==============================
+# ССЫЛКИ
+# ==============================
 COURSE_LINK = "https://yookassa.ru/my/i/abexX5Cytb8c/l"
 CHANNEL_LINK = "https://t.me/+T1jWi1N41_UyYTIy"
-CHANNEL_ID = -1003693758070
+CHANNEL_ID = -1003693758070  # пока не используется
 
 # ==============================
 # БАЗА КАРТ ПО ТЕМАМ
@@ -244,11 +252,15 @@ theme_names = {
     "advice": "Совет",
 }
 
-# Создаём объекты бота
+# ==============================
+# СОЗДАЁМ БОТА
+# ==============================
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-
+# ==============================
+# КЛАВИАТУРЫ
+# ==============================
 def get_main_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="✨ Мини-расклад", callback_data="mini_reading")
@@ -282,13 +294,30 @@ def get_promo_menu():
     return builder.as_markup()
 
 
-def get_paid_menu():
+def get_buy_menu():
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Я оплатил", callback_data="paid")
+    builder.button(text="💳 Перейти к оплате", url=COURSE_LINK)
     builder.adjust(1)
     return builder.as_markup()
 
 
+def get_admin_check_menu(user_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="✅ Подтвердить оплату",
+        callback_data=f"approve_{user_id}"
+    )
+    builder.button(
+        text="❌ Отклонить",
+        callback_data=f"reject_{user_id}"
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+# ==============================
+# ОБРАБОТЧИКИ
+# ==============================
 @dp.message(CommandStart())
 async def start_handler(message: Message):
     await message.answer(
@@ -339,7 +368,7 @@ async def theme_handler(callback: CallbackQuery):
         "• Система обучения без зубрёжки — работа через понимание\n"
         "• Поддержка в чате и ответы на вопросы\n"
         "• Доступ навсегда\n\n"
-        "После оплаты ты получишь доступ в закрытый Telegram-канал.\n\n"
+        "После оплаты пришли сюда скриншот чека, и я отправлю доступ в закрытый Telegram-канал.\n\n"
         "Ну что? Готова стать будущей ведьмой? ✨\n\n"
         "Тогда жми кнопку ниже 👇🏻"
     )
@@ -372,24 +401,116 @@ async def buy_course_handler(callback: CallbackQuery):
     await callback.answer()
 
     await callback.message.answer(
-        "Для получения доступа к обучению перейдите по ссылке для оплаты:\n\n"
-        f"{COURSE_LINK}"
-    )
-
-    await callback.message.answer(
-        "После оплаты нажмите кнопку ниже 👇",
-        reply_markup=get_paid_menu()
+        "Для получения доступа к обучению нажмите кнопку ниже 👇\n\n"
+        "После оплаты пришлите сюда скриншот чека, и я отправлю вам доступ в закрытый канал.",
+        reply_markup=get_buy_menu()
     )
 
 
-@dp.callback_query(F.data == "paid")
-async def paid_handler(callback: CallbackQuery):
-    await callback.answer()
+@dp.message(F.photo)
+async def payment_screenshot_handler(message: Message):
+    user = message.from_user
+    photo = message.photo[-1].file_id
 
-    await callback.message.answer(
+    username = f"@{user.username}" if user.username else "без username"
+    full_name = user.full_name if user.full_name else "Без имени"
+
+    admin_text = (
+        "📩 Пришел новый скриншот оплаты\n\n"
+        f"👤 Имя: {full_name}\n"
+        f"🆔 ID: {user.id}\n"
+        f"🔗 Username: {username}\n\n"
+        "Выберите действие ниже:"
+    )
+
+    await bot.send_photo(
+        chat_id=ADMIN_ID,
+        photo=photo,
+        caption=admin_text,
+        reply_markup=get_admin_check_menu(user.id)
+    )
+
+    await message.answer(
         "Спасибо 💖\n\n"
-        "Если оплата прошла успешно, переходи в закрытый канал по ссылке:\n"
-        f"{CHANNEL_LINK}"
+        "Скриншот получен и отправлен на проверку.\n"
+        "После проверки оплаты я пришлю вам доступ в закрытый канал."
+    )
+
+
+@dp.callback_query(F.data.startswith("approve_"))
+async def approve_payment_handler(callback: CallbackQuery):
+    await callback.answer("Оплата подтверждена")
+
+    if callback.from_user.id != ADMIN_ID:
+        await callback.message.answer("У вас нет прав для этого действия.")
+        return
+
+    user_id = int(callback.data.replace("approve_", ""))
+
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                "Спасибо за оплату 💖\n\n"
+                "Оплата подтверждена.\n"
+                "Вот ссылка на закрытый канал:\n"
+                f"{CHANNEL_LINK}"
+            )
+        )
+
+        await callback.message.edit_caption(
+            caption=(
+                f"{callback.message.caption}\n\n"
+                "✅ Оплата подтверждена"
+            ),
+            reply_markup=None
+        )
+
+    except Exception as e:
+        await callback.message.answer(
+            f"Не удалось отправить сообщение пользователю.\nОшибка: {e}"
+        )
+
+
+@dp.callback_query(F.data.startswith("reject_"))
+async def reject_payment_handler(callback: CallbackQuery):
+    await callback.answer("Оплата отклонена")
+
+    if callback.from_user.id != ADMIN_ID:
+        await callback.message.answer("У вас нет прав для этого действия.")
+        return
+
+    user_id = int(callback.data.replace("reject_", ""))
+
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                "Здравствуйте.\n\n"
+                "Пока не удалось подтвердить оплату.\n"
+                "Пожалуйста, проверьте чек и при необходимости отправьте скриншот повторно."
+            )
+        )
+
+        await callback.message.edit_caption(
+            caption=(
+                f"{callback.message.caption}\n\n"
+                "❌ Оплата отклонена"
+            ),
+            reply_markup=None
+        )
+
+    except Exception as e:
+        await callback.message.answer(
+            f"Не удалось отправить сообщение пользователю.\nОшибка: {e}"
+        )
+
+
+@dp.message()
+async def other_messages_handler(message: Message):
+    await message.answer(
+        "Пожалуйста, используйте кнопки меню ниже 👇",
+        reply_markup=get_main_menu()
     )
 
 
