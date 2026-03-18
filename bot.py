@@ -15,6 +15,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+SECOND_ADMIN_ID = os.getenv("SECOND_ADMIN_ID")
 
 if not BOT_TOKEN:
     raise ValueError("Переменная окружения BOT_TOKEN не найдена")
@@ -22,7 +23,10 @@ if not BOT_TOKEN:
 if not ADMIN_ID:
     raise ValueError("Переменная окружения ADMIN_ID не найдена")
 
-ADMIN_ID = int(ADMIN_ID)
+if not SECOND_ADMIN_ID:
+    raise ValueError("Переменная окружения SECOND_ADMIN_ID не найдена")
+
+ADMIN_IDS = [int(ADMIN_ID), int(SECOND_ADMIN_ID)]
 
 # ==============================
 # ССЫЛКИ
@@ -278,13 +282,6 @@ def get_theme_menu():
     return builder.as_markup()
 
 
-def get_after_reading_menu():
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔁 Сделать расклад ещё", callback_data="mini_reading")
-    builder.adjust(1)
-    return builder.as_markup()
-
-
 def get_promo_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="💎 Купить обучение за 990 ₽", callback_data="buy_course")
@@ -370,14 +367,10 @@ async def theme_handler(callback: CallbackQuery):
         photo = FSInputFile(image_path)
         await callback.message.answer_photo(
             photo=photo,
-            caption=reading_text,
-            reply_markup=get_after_reading_menu()
+            caption=reading_text
         )
     else:
-        await callback.message.answer(
-            reading_text,
-            reply_markup=get_after_reading_menu()
-        )
+        await callback.message.answer(reading_text)
 
     await asyncio.sleep(7)
 
@@ -414,12 +407,13 @@ async def payment_screenshot_handler(message: Message):
         "Выберите действие ниже:"
     )
 
-    await bot.send_photo(
-        chat_id=ADMIN_ID,
-        photo=photo,
-        caption=admin_text,
-        reply_markup=get_admin_check_menu(user.id)
-    )
+    for admin_id in ADMIN_IDS:
+        await bot.send_photo(
+            chat_id=admin_id,
+            photo=photo,
+            caption=admin_text,
+            reply_markup=get_admin_check_menu(user.id)
+        )
 
     await message.answer(
         "Спасибо 💖\n\n"
@@ -430,7 +424,7 @@ async def payment_screenshot_handler(message: Message):
 
 @dp.callback_query(F.data.startswith("approve_"))
 async def approve_payment_handler(callback: CallbackQuery):
-    if callback.from_user.id != ADMIN_ID:
+    if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("Нет доступа", show_alert=True)
         return
 
@@ -462,7 +456,7 @@ async def approve_payment_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_payment_handler(callback: CallbackQuery):
-    if callback.from_user.id != ADMIN_ID:
+    if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("Нет доступа", show_alert=True)
         return
 
