@@ -268,6 +268,7 @@ dp = Dispatcher()
 def get_main_menu():
     builder = InlineKeyboardBuilder()
     builder.button(text="✨ Мини-расклад", callback_data="mini_reading")
+    builder.button(text="💎 Купить обучение", callback_data="buy_course")
     builder.adjust(1)
     return builder.as_markup()
 
